@@ -10,6 +10,14 @@ def coeff_determination(y_true, y_pred):
     SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
     return ( 1 - SS_res/(SS_tot + K.epsilon()) )
 
+def RSS(y_true, y_pred):
+    SS_res =  K.sum(K.square( y_true-y_pred )) 
+    return SS_res
+
+def TSS(y_true, y_pred):
+    SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
+    return SS_tot
+
 with open('binned_data.pkl', 'rb') as f:
     data = pickle.load(f)
     
@@ -40,7 +48,7 @@ for dim in [10, 50, 100, 500, 1000]:
     # Create the decoder model
     decoder = keras.Model(encoded_input, decoder_layer(encoded_input))
 
-    autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[coeff_determination])
+    autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[coeff_determination, RSS, TSS])
 
     dataset = tf.data.Dataset.from_tensor_slices(spectra_matrix)
     dataset = dataset.map(lambda x: (x, x))  # Use x_train as both inputs & targets
