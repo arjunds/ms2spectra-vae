@@ -1,7 +1,13 @@
 import pickle
 import keras
 from keras import layers
+from keras import backend as K
+import tensorflow as tf
 
+def coeff_determination(y_true, y_pred):
+    SS_res =  K.sum(K.square( y_true-y_pred )) 
+    SS_tot = K.sum(K.square( y_true - K.mean(y_true) ) ) 
+    return ( 1 - SS_res/(SS_tot + K.epsilon()) )
 
 with open('binned_data.pkl', 'rb') as f:
     data = pickle.load(f)
@@ -32,9 +38,11 @@ decoder_layer = autoencoder.layers[-1]
 # Create the decoder model
 decoder = keras.Model(encoded_input, decoder_layer(encoded_input))
 
-autoencoder.compile(optimizer='adam', loss='mean_squared_error')
+autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[coeff_determination])
 
-autoencoder.fit(spectra_matrix, spectra_matrix,
-                epochs=50,
-                batch_size=256,
-                shuffle=True, validation_split=0.2)
+dataset = tf.data.Dataset.from_tensor_slices(spectra_matrix)
+dataset = dataset.map(lambda x: (x, x))  # Use x_train as both inputs & targets
+dataset = dataset.shuffle(buffer_size=1024).batch(32)
+
+autoencoder.fit(dataset,
+                epochs=50)
