@@ -3,7 +3,10 @@ import keras
 from keras import layers
 from keras import backend as K
 import tensorflow as tf
+import tensorflow_addons as tfa
 import datetime
+import numpy as np
+import math
 
 def coeff_determination(y_true, y_pred):
     SS_res =  K.sum(K.square( y_true-y_pred )) 
@@ -21,10 +24,19 @@ def TSS(y_true, y_pred):
 with open('binned_data.pkl', 'rb') as f:
     data = pickle.load(f)
     
-spectra_matrix = data[0].toarray()
-dims = spectra_matrix.shape
+spectra_matrix = data[0].toarray().T
 
-for dim in [10, 50, 100, 500, 1000]:
+x_train = spectra_matrix
+# Takes 1/7 of the data for validation
+test_index = np.random.choice(range(len(x_train)), math.floor(len(x_train)/10), replace=False)
+x_test = x_train[test_index]
+x_train = np.delete(x_train, test_index, 0)
+print(x_train.shape)
+print(x_test.shape)
+
+dims = x_train.shape
+
+for dim in [100]:
     # This is the size of our encoded representations
     encoding_dim = dim  # changed from 32 in example to 100 for testing
 
@@ -48,13 +60,13 @@ for dim in [10, 50, 100, 500, 1000]:
     # Create the decoder model
     decoder = keras.Model(encoded_input, decoder_layer(encoded_input))
 
-    autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[coeff_determination, RSS, TSS])
+    autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))])
 
-    dataset = tf.data.Dataset.from_tensor_slices(spectra_matrix)
-    dataset = dataset.map(lambda x: (x, x))  # Use x_train as both inputs & targets
-    dataset = dataset.shuffle(buffer_size=1024).batch(32)
+    # dataset = tf.data.Dataset.from_tensor_slices(spectra_matrix)
+    # dataset = dataset.map(lambda x: (x, x))  # Use x_train as both inputs & targets
+    # dataset = dataset.shuffle(buffer_size=1).batch(1)
 
-    log_dir = "logs/fit/dim" + str(dim) + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = "logs/fit/7000epochs" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-    autoencoder.fit(dataset, epochs=50, callbacks=[tensorboard_callback])
+    autoencoder.fit(x_train, x_train, epochs=7000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
