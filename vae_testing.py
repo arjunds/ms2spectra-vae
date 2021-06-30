@@ -27,7 +27,7 @@ with open('binned_data.pkl', 'rb') as f:
 spectra_matrix = data[0].toarray().T
 
 x_train = spectra_matrix
-# Takes 1/7 of the data for validation
+# Takes ~10% of the data for validation
 test_index = np.random.choice(range(len(x_train)), math.floor(len(x_train)/10), replace=False)
 x_test = x_train[test_index]
 x_train = np.delete(x_train, test_index, 0)
