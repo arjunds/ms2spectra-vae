@@ -56,7 +56,7 @@ autoencoder = keras.Model(input_data, decoded)
 
 autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1], 1))])
 
-log_dir = "logs/fit/DeepVAE" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+log_dir = "logs/fit/ConvVAE" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 autoencoder.fit(x_train, x_train, epochs=7000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
