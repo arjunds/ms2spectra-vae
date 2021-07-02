@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 import math
 
-with open('binned_complex.pkl', 'rb') as f:
+with open('binned_gnps.pkl', 'rb') as f:
     data = pickle.load(f)
     
 spectra_matrix = data[0].toarray().T
