@@ -6,7 +6,9 @@ import tensorflow_addons as tfa
 import datetime
 import numpy as np
 import math
+import time
 
+start = time.time()
 with open('binned_gnps.pkl', 'rb') as f:
     data = pickle.load(f)
     
@@ -36,4 +38,12 @@ autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[tfa.me
 log_dir = "logs/fit/BasicVAE" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
+fit = time.time()
 autoencoder.fit(x_train, x_train, epochs=7000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
+
+end = time.time()
+with open("times", 'a') as file:
+    file.write("Basic\n")
+    file.write("Total: " + str(end - start) + "\n")
+    file.write("Model Fit:" + str(end - fit) + "\n")
+    file.write("\n")
