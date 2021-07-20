@@ -40,7 +40,7 @@ autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquar
 
 
 autoencoder.fit(x_train, x_train, epochs=10000, validation_data=(x_test, x_test))
-
+autoencoder.save_weights("vae_weights.h5")
 print("Fitted GNPS")
 with open('binned_data.pkl', 'rb') as f:
     data = pickle.load(f)
@@ -60,6 +60,15 @@ dims = x_train.shape
 print("Loaded AGP3k")
 
 with mirrored_strategy.scope():
+    # Create base model
+    base_model = keras.applications.Xception(
+        weights='vae_weights.h5',
+        input_shape=(dims[1],),
+        include_top=False)
+    
+    # Freeze base model
+    base_model.trainable = False
+
     input_data = keras.Input(shape=(dims[1],))
     encoded.trainable = False
     decoded = layers.Dense(dims[1], activation='sigmoid')(encoded)
