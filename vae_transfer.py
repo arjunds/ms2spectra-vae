@@ -70,7 +70,7 @@ with mirrored_strategy.scope():
     base_model.trainable = False
 
     input_data = keras.Input(shape=(dims[1],))
-    encoded.trainable = False
+    encoded = base_model(input_data, training=False)
     decoded = layers.Dense(dims[1], activation='sigmoid')(encoded)
 
     # This model maps an input to its reconstruction
