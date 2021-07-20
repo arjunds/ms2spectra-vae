@@ -34,8 +34,9 @@ with mirrored_strategy.scope():
 
     # This model maps an input to its reconstruction
     autoencoder = keras.Model(input_data, decoded)
+    rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
 
-autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))])
+autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
 
 
 autoencoder.fit(x_train, x_train, epochs=10000, validation_data=(x_test, x_test))
@@ -65,8 +66,9 @@ with mirrored_strategy.scope():
 
     # This model maps an input to its reconstruction
     autoencoder = keras.Model(input_data, decoded)
+    rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
 
-autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))])
+autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
 
 log_dir = "logs/fit/TransferLearning" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
