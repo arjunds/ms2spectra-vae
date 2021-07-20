@@ -60,21 +60,12 @@ dims = x_train.shape
 print("Loaded AGP3k")
 
 with mirrored_strategy.scope():
-    # Create base model
-    base_model = keras.applications.Xception(
-        weights='vae_weights.h5',
-        input_shape=(dims[1],),
-        include_top=False)
-    
-    # Freeze base model
-    base_model.trainable = False
-
     input_data = keras.Input(shape=(dims[1],))
-    encoded = base_model(input_data, training=False)
+    encoded.trainable = False
     decoded = layers.Dense(dims[1], activation='sigmoid')(encoded)
 
     # This model maps an input to its reconstruction
-    autoencoder = keras.Model(input_data, decoded)
+    autoencoder = keras.Sequential([input_data, encoded, decoded])
     rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
 
 autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
