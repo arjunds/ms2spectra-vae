@@ -1,7 +1,6 @@
 import pickle
 import keras
 from keras import layers
-from keras.utils import multi_gpu_model
 import tensorflow as tf
 import tensorflow_addons as tfa
 import datetime
@@ -35,11 +34,9 @@ decoded = layers.Dense(dims[1], activation='sigmoid')
 autoencoder = keras.Sequential([input_data, encoded, decoded])
 rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
 
-parallel_model = multi_gpu_model(autoencoder)
+autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
 
-parallel_model.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
-
-parallel_model.fit(x_train, x_train, epochs=10000, validation_data=(x_test, x_test))
+autoencoder.fit(x_train, x_train, epochs=10000, validation_data=(x_test, x_test))
 
 print("Fitted GNPS")
 
@@ -70,11 +67,9 @@ transfer_autoencoder = keras.Sequential([input_data, encoded, decoded])
 rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
 transfer_autoencoder.layers[1].set_weights(autoencoder.layers[1].get_weights())
 
-parallel_model = multi_gpu_model(transfer_autoencoder)
-
-parallel_model.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
+transfer_autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
 
 log_dir = "logs/fit/TransferLearning" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-parallel_model.fit(x_train, x_train, epochs=10000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
+transfer_autoencoder.fit(x_train, x_train, epochs=10000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
