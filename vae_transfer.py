@@ -8,7 +8,7 @@ import numpy as np
 import math
 import time
 
-with open('binned_gnps.pkl', 'rb') as f:
+with open('binned_gnps_0.5.pkl', 'rb') as f:
     data = pickle.load(f)
     
 spectra_matrix = data[0].toarray().T
@@ -28,21 +28,19 @@ mirrored_strategy = tf.distribute.MirroredStrategy()
 with mirrored_strategy.scope():
     # This is our input data
     input_data = keras.Input(shape=(dims[1],))
-    encoded = layers.Dense(100, activation='relu')(input_data)
-
-    decoded = layers.Dense(dims[1], activation='sigmoid')(encoded) 
+    encoded = layers.Dense(100, activation='relu')
+    decoded = layers.Dense(dims[1], activation='sigmoid') 
 
     # This model maps an input to its reconstruction
-    autoencoder = keras.Model(input_data, decoded)
+    autoencoder = keras.Sequential([input_data, encoded, decoded])
     rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
 
 autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
 
 
 autoencoder.fit(x_train, x_train, epochs=10000, validation_data=(x_test, x_test))
-autoencoder.save_weights("vae_weights.h5")
 print("Fitted GNPS")
-with open('binned_data.pkl', 'rb') as f:
+with open('binned_agp3k_0.5.pkl', 'rb') as f:
     data = pickle.load(f)
     
 spectra_matrix = data[0].toarray().T
@@ -61,16 +59,18 @@ print("Loaded AGP3k")
 
 with mirrored_strategy.scope():
     input_data = keras.Input(shape=(dims[1],))
+    encoded = layers.Dense(100, activation='relu')
     encoded.trainable = False
-    decoded = layers.Dense(dims[1], activation='sigmoid')(encoded)
+    decoded = layers.Dense(dims[1], activation='sigmoid')
 
     # This model maps an input to its reconstruction
-    autoencoder = keras.Sequential([input_data, encoded, decoded])
+    transfer_autoencoder = keras.Sequential([input_data, encoded, decoded])
     rsquare = tfa.metrics.r_square.RSquare(dtype=tf.float32, y_shape=(dims[1],))
+    transfer_autoencoder.layers[1].set_weights(autoencoder.layers[1].get_weights())
 
-autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
+transfer_autoencoder.compile(optimizer='adam', loss='mean_squared_error', metrics=[rsquare])
 
 log_dir = "logs/fit/TransferLearning" + "_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-autoencoder.fit(x_train, x_train, epochs=10000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
+transfer_autoencoder.fit(x_train, x_train, epochs=10000, callbacks=[tensorboard_callback], validation_data=(x_test, x_test))
